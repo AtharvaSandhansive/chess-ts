@@ -1,9 +1,10 @@
 //interface.ts
 import  { type Position, type Unit } from "../data/data";
-import { GameState } from "../data/gameState";
+import { GameState, type GameStatus } from "../data/gameState";
 import {
     Engine
-} from "../engine/engine"
+} from "../engine/engine";
+import {Result} from "../ui/result";
 
 //importing the assets
 import whiteRook from "../assets/white-rook.png";
@@ -20,15 +21,31 @@ import blackQueen from "../assets/black-queen.png";
 import blackKing from "../assets/black-king.png";
 import blackPawn from "../assets/black-pawn.png";
 
+//game scene
+type Screen = "menu" | "game" | "result";
 
 export class Interface{
     private engine:Engine;
     private board:HTMLElement;
+    private result:Result;
+    onPlayAgain: () => void;
+    onMainMenu: () => void;
 
-    constructor(engine:Engine, board:HTMLElement){
+    constructor(engine:Engine, board:HTMLElement,onPlayAgain: () => void,onMainMenu: () => void){
         this.engine = engine;
         this.board = board;
+        this.onPlayAgain = onPlayAgain;
+        this.onMainMenu = onMainMenu;
+        this.result = new Result(this.onPlayAgain, this.onMainMenu);
         this.UpdateUI();
+    }
+
+    public handleGameStatus(status: GameStatus): void {
+        if (status==="checkmate" || status==="stalemate"){
+            const winner = status === "checkmate"?
+            (this.engine.getTurn()==="white"?"Black":"White"):undefined;
+            this.result.show(status, winner);
+        }
     }
 
     public SelectSquare(x:number, y:number):void{

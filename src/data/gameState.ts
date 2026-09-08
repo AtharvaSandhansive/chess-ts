@@ -14,8 +14,15 @@ import {
 } from "./data";
 
 
+export type GameStatus = 
+    |"playing"
+    |"check"
+    |"checkmate" 
+    |"stalemate"
+
 export class GameState{
     private unitState: Unit[] = [];
+    public gameStatus:GameStatus = "playing";
     constructor(){
         const piecesSetup :{
             pos: Position;

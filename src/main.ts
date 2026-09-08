@@ -1,55 +1,88 @@
 import { GameState } from "./data/gameState";
 import { Engine } from "./engine/engine";
-import { AIModule } from "./modules/ai";
+//import { AIModule } from "./modules/ai";
 import { Interface } from "./ui/interface";
+import {Menu} from "./ui/menu";
 
-const gameState: GameState = new GameState();
-const engine: Engine = new Engine(gameState);
-const aiModule:AIModule = new AIModule(engine, gameState);
+const menu:Menu = new Menu(startLocalGame);
+menu.show();
 
-const board = document.getElementById("board");
-
-if (!board) {
-    throw new Error("Board element not found");
+function startLocalGame():void{
+    menu.hide();
+    const gameState:GameState = new GameState();
+    const engine:Engine = new Engine(gameState);
+    createBoard(engine, gameState);
 }
 
-// Generate the board
-for (let y = 7; y >= 0; y--) {
-    for (let x = 0; x < 8; x++) {
+function createBoard(engine:Engine, gameState:GameState):void{
+    
+    //create app
+    const app = document.getElementById("app");
+    if (!app){throw new Error("no app");}
+    
+    //create board and append to app
+    const board = document.createElement("div");
+    board.id = "board";
+    app.appendChild(board);
 
-        const square = document.createElement("div");
+    // Generate the board
+    for (let y = 7; y >= 0; y--) {
+        for (let x = 0; x < 8; x++) {
 
-        square.classList.add("square");
+            const square = document.createElement("div");
 
-        square.dataset.x = x.toString();
-        square.dataset.y = y.toString();
+            square.classList.add("square");
 
-        if ((x + y) % 2 === 0) {
-            square.classList.add("light");
-        } else {
-            square.classList.add("dark");
+            square.dataset.x = x.toString();
+            square.dataset.y = y.toString();
+
+            if ((x + y) % 2 === 0) {
+                square.classList.add("light");
+            } else {
+                square.classList.add("dark");
+            }
+
+            board.appendChild(square);
         }
-
-        board.appendChild(square);
     }
+
+    // Create the UI
+    const ui = new Interface(engine, board, playAgain, showMainMenu);
+
+    engine.setGameStatusListener((status) => {ui.handleGameStatus(status)});
+
+    // Give every square one click handler
+    const squares = board.querySelectorAll<HTMLElement>(".square");
+    squares.forEach(square => {
+
+        square.addEventListener("click", () => {
+
+            const x = Number(square.dataset.x);
+            const y = Number(square.dataset.y);
+
+            console.log("Clicked:", x, y);
+
+            ui.SelectSquare(x, y);
+        });
+
+    });
 }
 
-// Create the UI
-const ui = new Interface(engine, board);
+function playAgain():void{
+    const app = document.getElementById("app");
+    if (!app){throw new Error("no app");}
 
-// Give every square one click handler
-const squares = board.querySelectorAll<HTMLElement>(".square");
+    app.replaceChildren();
+    startLocalGame();
+}
 
-squares.forEach(square => {
+function showMainMenu(): void {
+    const app = document.getElementById("app");
 
-    square.addEventListener("click", () => {
+    if (!app) {throw new Error("App element not found");}
 
-        const x = Number(square.dataset.x);
-        const y = Number(square.dataset.y);
+    app.replaceChildren();
 
-        console.log("Clicked:", x, y);
+    menu.show();
+}
 
-        ui.SelectSquare(x, y);
-    });
-
-});

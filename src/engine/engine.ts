@@ -9,18 +9,15 @@ import {
     DiagonalMovement,
 } from "../data/data";
 import {
-    GameState
+    GameState,
+    type GameStatus,
 } from "../data/gameState";
 import {
     filter
 } from "./filters";
 
 
-type GameStatus = 
-    |"playing"
-    |"check"
-    |"checkmate"
-    |"stalemate"
+
 
 export class OccupancyPackage {
     public empty: Position[] = [];
@@ -53,21 +50,28 @@ export class Engine {
     //vars
     private gameState: GameState;
     private Turn: Colour = "white";
-    private _filter: filter;
+    public _filter: filter;
     private currentSelectedUnit: Unit | undefined = undefined;
     private hasSelected: boolean = false;
     private possiblePositions: Position[] = [];
-    private gameStatus:GameStatus = "playing";
     public isKingChecked = false;
+
+    //event caller
+    private gameStatusListener: ((status: GameStatus) => void) | undefined;
 
     public getSelectedUnit(): Unit | undefined {return this.currentSelectedUnit;}
     public getPossiblePositions(): Position[] {return this.possiblePositions;}
     public isSelected(): boolean {return this.hasSelected;}
     public readGameState():GameState{return this.gameState;}
+    public getTurn():Colour{return this.Turn;}
 
     constructor(gameState: GameState) {
         this.gameState = gameState;
         this._filter = new filter(gameState, );
+    }
+
+    public setGameStatusListener(listener: (status: GameStatus) => void): void {
+        this.gameStatusListener = listener;
     }
 
     //Interface calls this function to tell it this position has been selected
@@ -258,7 +262,7 @@ export class Engine {
         this.updateKingCheck();
 
         this.updateGameStatus();
-        console.log("Game status:", this.gameStatus);
+        console.log("Game status:", this.gameState.gameStatus);
     }
 
     //generates all the possible positions ignoring every lawas
@@ -527,11 +531,18 @@ export class Engine {
 
         const colour = this.Turn;
 
-        if (this.isCheckmate(colour)) {this.gameStatus = "checkmate"; return;}
-        if (this.isStalemate(colour)) {this.gameStatus = "stalemate"; return;}
-        if (this.isKingAttacked(colour)) {this.gameStatus = "check"; return;}
-
-        this.gameStatus = "playing";
+        if (this.isCheckmate(colour)) {
+            this.gameState.gameStatus = "checkmate";
+        }
+        else if (this.isStalemate(colour)) {
+            this.gameState.gameStatus = "stalemate";
+        }
+        else if (this.isKingAttacked(colour)) {
+            this.gameState.gameStatus = "check";
+        }
+        else {this.gameState.gameStatus = "playing";}
+        //call the gamestatus event
+        if (this.gameStatusListener) {this.gameStatusListener(this.gameState.gameStatus);}
     }
 
     private checkPromotion(): void {
