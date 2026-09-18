@@ -1,10 +1,10 @@
 import { GameState } from "./data/gameState";
 import { Engine } from "./engine/engine";
-//import { AIModule } from "./modules/ai";
+import { AIModule } from "./modules/ai";
 import { Interface } from "./ui/interface";
 import {Menu} from "./ui/menu";
 
-const menu:Menu = new Menu(startLocalGame);
+const menu:Menu = new Menu(startLocalGame, startVsComputer);
 menu.show();
 
 function startLocalGame():void{
@@ -12,6 +12,25 @@ function startLocalGame():void{
     const gameState:GameState = new GameState();
     const engine:Engine = new Engine(gameState);
     createBoard(engine, gameState);
+}
+
+function startVsComputer():void{
+
+    menu.hide();
+    const gameState:GameState = new GameState();
+    const engine:Engine = new Engine(gameState);
+    createBoard(engine, gameState);
+
+    const ai = new AIModule(engine, gameState);
+
+    engine.setTurnListener((colour) => {
+        if (colour !== "black") {return;}
+        console.log("AI'S TURN");
+        const aiMove = ai.chooseMove();
+        if (!aiMove) {return;}
+        engine.makeMove(aiMove, true);
+        }
+    );
 }
 
 function createBoard(engine:Engine, gameState:GameState):void{

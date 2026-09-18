@@ -4,8 +4,10 @@ import "./menu.css"
 
 export class Menu{
     private onLocalPvP: () => void;
-    constructor(onLocalPvP :() => void ){
+    private onVsComputer: () => void;
+    constructor(onLocalPvP :() => void, onVsComputer: () => void){
         this.onLocalPvP = onLocalPvP;
+        this.onVsComputer = onVsComputer;
     }
 
     public show():void{
@@ -25,7 +27,9 @@ export class Menu{
 
         const computerButton = document.createElement("button");
         computerButton.textContent = "Vs Computer";
-
+        computerButton.addEventListener("click", () => {
+            this.onVsComputer();
+        });
         menu.appendChild(computerButton);
 
         const lanButton = document.createElement("button");
@@ -33,7 +37,6 @@ export class Menu{
 
         menu.appendChild(lanButton);
 
-        computerButton.disabled = true;
         lanButton.disabled = true;
 
         const app = document.getElementById("app");

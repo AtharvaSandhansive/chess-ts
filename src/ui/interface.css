@@ -5,7 +5,7 @@ body {
     flex-direction: column;
     justify-content: center;
     align-items: center;
-    background-color: #3d9621; /* Optional dark theme to contrast the board */
+    background-color: #3d9621; 
 }
 
 #board {

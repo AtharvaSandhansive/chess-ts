@@ -21,6 +21,13 @@ function isValidPosition(pos:Position):boolean{
         }
         return false;
 }
+
+export type Move = {
+    unit:Unit;
+    from:Position;
+    to:Position;
+};
+
 //MOvements
 export abstract class Movement{
     abstract returnPositions(currentPosition: Position, colour:Colour): Position[];
@@ -165,14 +172,8 @@ export class PawnMovement extends Movement {
                 }
             ];
 
-            console.log("White Pawn:", currentPosition);
-            console.log("Candidates:", candidates);
 
             for (const candidate of candidates) {
-                console.log(
-                    "Candidate:",candidate,
-                    "valid:",isValidPosition(candidate)
-                );
 
                 if (isValidPosition(candidate)) {possiblePositions.push(candidate);}
             }
@@ -205,15 +206,8 @@ export class PawnMovement extends Movement {
                 }
             ];
 
-            console.log("Black Pawn:", currentPosition);
-            console.log("Candidates:", candidates);
 
             for (const candidate of candidates) {
-
-                console.log(
-                    "Candidate:",candidate,
-                    "valid:",isValidPosition(candidate)
-                );
 
                 if (isValidPosition(candidate)) {possiblePositions.push(candidate);}
             }

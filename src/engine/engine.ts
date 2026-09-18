@@ -3,6 +3,7 @@
 import {
     type Position,
     Unit,
+    type Move,
     type Colour,
     HorizontalMovement,
     VerticalMovement,
@@ -46,6 +47,16 @@ export class PositionPackage{
     }
 }
 
+export type MoveState = {
+    move: Move;
+    capturedUnit?: Unit;
+    movedUnitHasMoved:boolean;
+    castlingRook?:Unit;
+    castlingRookOriginalPosition?:Position;
+    castlingRookHasMoved?:boolean;
+    promotedUnit?: Unit;
+};
+
 export class Engine {
     //vars
     private gameState: GameState;
@@ -58,6 +69,8 @@ export class Engine {
 
     //event caller
     private gameStatusListener: ((status: GameStatus) => void) | undefined;
+    //listen for turns fro ai module
+    private turnListener:((colour: Colour) => void) | undefined;
 
     public getSelectedUnit(): Unit | undefined {return this.currentSelectedUnit;}
     public getPossiblePositions(): Position[] {return this.possiblePositions;}
@@ -72,6 +85,9 @@ export class Engine {
 
     public setGameStatusListener(listener: (status: GameStatus) => void): void {
         this.gameStatusListener = listener;
+    }
+    public setTurnListener(listener: (colour: Colour) => void): void {
+        this.turnListener = listener;
     }
 
     //Interface calls this function to tell it this position has been selected
@@ -101,11 +117,10 @@ export class Engine {
         const clickedUnit = this.gameState.getUnitAt(pos);
 
         //if no unit exists at that place i.e. Player selected an empty square, throw error
-        if (!clickedUnit) {console.log("No unit on this place!"); return false;}
+        if (!clickedUnit) {return false;}
 
         //jmp to validate unit to check if the unit selected is valid according to turn
         if (!this.validateUnit(clickedUnit)) {
-            console.log("Wrong unit selected at your turn");
             return false;
         }
 
@@ -159,7 +174,6 @@ export class Engine {
     private handleEmptySquare(pos: Position): boolean {
 
         if (!this.isPossiblePosition(pos)) {
-            console.log("Invalid move!");
             this.ClearSelection();
             return false;
         }
@@ -205,7 +219,6 @@ export class Engine {
     private handleFriendlyUnit(unit: Unit): boolean {
 
         if (!this.canSelectUnit(unit)) {
-            console.log("This unit cannot respond to the check.");
             this.ClearSelection();
             return false;
         }
@@ -218,7 +231,6 @@ export class Engine {
     private handleEnemyUnit(pos: Position): boolean {
 
         if (!this.isPossiblePosition(pos)) {
-            console.log("Invalid move!");
             this.ClearSelection();
             return false;
         }
@@ -248,21 +260,21 @@ export class Engine {
         return true;
     }
 
-    private finishMove(): void {
+    public finishMove(): void {
 
         this.checkPromotion();
         this.ClearSelection();
 
-        if (this.Turn === "white") {
-            this.Turn = "black";
-        } else {
-            this.Turn = "white";
-        }
+        // Change turn
+        if (this.Turn === "white") {this.Turn = "black";} else {this.Turn = "white";}
 
         this.updateKingCheck();
-
         this.updateGameStatus();
-        console.log("Game status:", this.gameState.gameStatus);
+
+        if (this.turnListener) {
+            console.log("Calling turn listener...");
+            this.turnListener(this.Turn);
+        }
     }
 
     //generates all the possible positions ignoring every lawas
@@ -326,13 +338,9 @@ export class Engine {
 
         let positions: Position[] = [];
 
-        console.log("Selected unit:", unit);
-        console.log("Movement count:", unit.movements.length);
-
         for (let i = 0; i < unit.movements.length; i++) {
             const returnedPositions =unit.movements[i].returnPositions(unit.position,unit.colour);
 
-            console.log("Movement returned:", returnedPositions);
             positions.push(...returnedPositions);
         }
 
@@ -423,7 +431,6 @@ export class Engine {
         const enemyPositions = this.generateTeamAttackPositions(enemyColour);
 
         this.isKingChecked =this._filter.isKingCheck(this.Turn,enemyPositions);
-        console.log("KIng checked", this.isKingChecked);
     }
 
 
@@ -438,12 +445,6 @@ export class Engine {
        
         const positions =this.generateLegalPositions(unit);
 
-        console.log(
-            "Legal positions:",
-            unit,
-            positions
-        );
-
         return positions;
     }
 
@@ -455,7 +456,7 @@ export class Engine {
 
         //we need to remove captured pieces temp
         if (capturedUnit && capturedUnit.pieceType==="king"){return false;}
-
+        if (capturedUnit){this.gameState.removeUnitAt(destination);}
         //temporarily make the move
         unit.position = destination;
         const enemyColour: Colour = unit.colour === "white" ? "black" : "white";
@@ -472,7 +473,7 @@ export class Engine {
         return !kingIsAttacked;
     }
 
-    private generateLegalPositions(unit:Unit):Position[]{
+    public generateLegalPositions(unit:Unit):Position[]{
         
         const candidatePOsitions = this.generatePossiblePositions(unit);
 
@@ -499,6 +500,32 @@ export class Engine {
             }
         }
         return legalPositions;
+    }
+
+    public getLegalMoves(colour:Colour):Move[]{
+        const MOves:Move[] = [];
+        const units = this.gameState.getUnits();
+
+        for (const unit of units){
+            if (unit.colour !== colour){continue;}
+
+            const legalPositions = this.generateLegalPositions(unit);
+            for (const pos of legalPositions){
+                MOves.push({
+                    unit:unit,
+                    from: {
+                        x: unit.position.x,
+                        y:unit.position.y
+                    },
+                    to: {
+                        x: pos.x,
+                        y: pos.y
+                    }
+                });
+            }
+
+        }
+        return MOves;
     }
 
     private hasAnyLegalMove(colour:Colour):boolean{
@@ -543,6 +570,7 @@ export class Engine {
         else {this.gameState.gameStatus = "playing";}
         //call the gamestatus event
         if (this.gameStatusListener) {this.gameStatusListener(this.gameState.gameStatus);}
+        
     }
 
     private checkPromotion(): void {
@@ -689,6 +717,127 @@ export class Engine {
         if (this.isKingAttacked(colour)){return false;}
 
         return !this.hasAnyLegalMove(colour);
+    }
+
+    public makeMove(move:Move, completeTurn:boolean):MoveState{
+        const capturedUnit = this.gameState.getUnitAt(move.to);
+
+        const movedUnitHasMoved = move.unit.hasMoved;
+
+        let castlingRook:Unit | undefined;
+        let castlingRookOriginalPosition: Position | undefined;
+        let castlingRookHasMoved: boolean | undefined;
+
+        //handle castling
+        if (
+            move.unit.pieceType === "king" &&
+            Math.abs(move.to.x - move.from.x) === 2
+        ){
+            const kingside = move.to.x > move.from.x;
+            castlingRook = this.getCastlingRook(move.unit, kingside);
+            if (castlingRook){
+                castlingRookOriginalPosition = {
+                    x: castlingRook.position.x,
+                    y: castlingRook.position.y
+                };
+
+                castlingRookHasMoved =  castlingRook.hasMoved;
+
+                const rookDestination:Position = {
+                    x: kingside? 5 : 3,
+                    y: move.from.y
+                };
+
+                this.gameState.moveUnit(castlingRook.position, rookDestination);
+
+                castlingRook.hasMoved = true;
+
+            }
+        }
+
+        if (capturedUnit){this.gameState.removeUnitAt(move.to);}
+
+        this.gameState.moveUnit(move.from, move.to);
+
+        move.unit.hasMoved = true;
+
+        let promotedUnit: Unit | undefined;
+
+        if (
+            move.unit.pieceType === "pawn" &&
+            (
+                (move.unit.colour === "white" && move.unit.position.y === 7) ||
+                (move.unit.colour === "black" && move.unit.position.y === 0)
+            )
+        ) {
+            this.promoteToQueen(move.unit);
+
+            promotedUnit = this.gameState.getUnitAt(move.to);
+
+            if (promotedUnit) {
+                promotedUnit.hasMoved = true;
+            }
+        }
+
+
+        return {
+            move:move,
+            capturedUnit:capturedUnit,
+            movedUnitHasMoved:movedUnitHasMoved,
+            castlingRook: castlingRook,
+            castlingRookOriginalPosition: castlingRookOriginalPosition,
+            castlingRookHasMoved: castlingRookHasMoved,
+            promotedUnit: promotedUnit
+        };
+    }
+
+    public undoMove(state: MoveState): void {
+
+        const move = state.move;
+
+        if (state.promotedUnit) {
+
+            this.gameState.removeUnitAt(
+                state.promotedUnit.position
+            );
+
+            move.unit.position = move.from;
+
+            move.unit.hasMoved =
+                state.movedUnitHasMoved;
+
+            this.gameState.addUnit(move.unit);
+
+        }
+        else {
+
+            this.gameState.moveUnit(
+                move.to,
+                move.from
+            );
+
+            move.unit.hasMoved =
+                state.movedUnitHasMoved;
+        }
+
+        if (
+            state.castlingRook &&
+            state.castlingRookOriginalPosition
+        ) {
+            this.gameState.moveUnit(
+                state.castlingRook.position,
+                state.castlingRookOriginalPosition
+            );
+
+            state.castlingRook.hasMoved =
+                state.castlingRookHasMoved ?? false;
+        }
+
+        if (state.capturedUnit) {
+            this.gameState.addUnit(
+                state.capturedUnit
+            );
+        }
     }
     
 }

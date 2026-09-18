@@ -13,6 +13,7 @@
     background-size: cover;     
     background-position: center;  
     background-repeat: no-repeat;
+     
 }
 
 #menu button {
@@ -20,4 +21,5 @@
     margin: 8px;
     padding: 12px;
     font-size: 18px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.5);
 }
