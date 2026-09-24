@@ -14,8 +14,9 @@ body {
     grid-template-columns: repeat(8, 1fr);
     grid-template-rows: repeat(8, 1fr);
 
-    width: min(95vw, 640px);
-    aspect-ratio: 1 / 1;
+    width: min(90vw, 80vh, 640px);
+    height: min(90vw, 80vh, 640px);
+    margin: auto;
     height: 640px;
     box-shadow: 0 5px 15px rgba(0,0,0,0.5);
     user-select: none;
