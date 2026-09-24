@@ -14,11 +14,9 @@ body {
     grid-template-columns: repeat(8, 1fr);
     grid-template-rows: repeat(8, 1fr);
 
-    /* Enforce maximum sizing bounds on mobile */
     width: min(95vw, 70vh, 640px);
     aspect-ratio: 1 / 1;
     
-    /* Crucial: Prevent flexbox or grid parent from over-stretching height */
     height: auto !important; 
     align-self: center;
 
@@ -28,7 +26,6 @@ body {
 }
 
 .square {
-    /* Let grid handle square dimensions completely */
     width: 100%;
     height: 100%;
     aspect-ratio: 1 / 1;
