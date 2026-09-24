@@ -21,8 +21,6 @@ import blackQueen from "../assets/black-queen.png";
 import blackKing from "../assets/black-king.png";
 import blackPawn from "../assets/black-pawn.png";
 
-//game scene
-type Screen = "menu" | "game" | "result";
 
 export class Interface{
     private engine:Engine;

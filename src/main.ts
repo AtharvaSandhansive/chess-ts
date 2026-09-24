@@ -33,7 +33,7 @@ function startVsComputer():void{
     );
 }
 
-function createBoard(engine:Engine, gameState:GameState):void{
+function createBoard(engine:Engine, _gameState:GameState):void{
     
     //create app
     const app = document.getElementById("app");

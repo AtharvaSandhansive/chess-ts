@@ -1,7 +1,7 @@
 //ai.ts
 import { GameState } from "../data/gameState";
 import { Engine } from "../engine/engine";
-import { type Colour, type Position, type Unit , type Move} from "../data/data";
+import { type Colour, type Unit , type Move} from "../data/data";
 
 export class AIModule {
 

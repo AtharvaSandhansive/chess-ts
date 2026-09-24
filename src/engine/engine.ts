@@ -719,7 +719,7 @@ export class Engine {
         return !this.hasAnyLegalMove(colour);
     }
 
-    public makeMove(move:Move, completeTurn:boolean):MoveState{
+    public makeMove(move:Move, _completeTurn:boolean):MoveState{
         const capturedUnit = this.gameState.getUnitAt(move.to);
 
         const movedUnitHasMoved = move.unit.hasMoved;
