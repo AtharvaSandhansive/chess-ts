@@ -5,7 +5,7 @@ body {
     flex-direction: column;
     justify-content: center;
     align-items: center;
-    background-color: #3d9621; 
+    background-color: #3d9621;
     overscroll-behavior: none;
 }
 
@@ -14,18 +14,24 @@ body {
     grid-template-columns: repeat(8, 1fr);
     grid-template-rows: repeat(8, 1fr);
 
-    width: min(90vw, 80vh, 640px);
-    height: min(90vw, 80vh, 640px);
-    margin: auto;
-    height: 640px;
+    /* Enforce maximum sizing bounds on mobile */
+    width: min(95vw, 70vh, 640px);
+    aspect-ratio: 1 / 1;
+    
+    /* Crucial: Prevent flexbox or grid parent from over-stretching height */
+    height: auto !important; 
+    align-self: center;
+
     box-shadow: 0 5px 15px rgba(0,0,0,0.5);
     user-select: none;
     -webkit-user-select: none;
 }
 
 .square {
+    /* Let grid handle square dimensions completely */
     width: 100%;
     height: 100%;
+    aspect-ratio: 1 / 1;
 }
 
 .light {
